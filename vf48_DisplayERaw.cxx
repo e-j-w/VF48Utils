@@ -11,11 +11,18 @@
 //Class for handling and unpacking VF48 events
 #include "UnpackVF48A.h"
 
-#define S32K   32768
-#define NSPECT 100
+//ROOT classes for plotting
+#include "TApplication.h"
+#include "TCanvas.h"
+#include "TH1D.h"
+#include "TProfile.h"
+#include "TGraph.h"
 
-//PARAMETERS
-int outHist[NSPECT][S32K];
+int gPlotChan = 1; //channel to plot
+
+TApplication *app = NULL;
+TCanvas* gWindow;
+TH1D* hchan;
 
 //function to get energy from VF48 waveforms
 double EvalVF48WaveformE(const VF48module *m, int chan)
@@ -56,14 +63,33 @@ double EvalVF48WaveformE(const VF48module *m, int chan)
 
 int main(int argc, char* argv[])
 {
-  FILE * InpDataFile, *output;
-  char   fileName[132], outName[132];
+  FILE * InpDataFile;
+  char   fileName[132];
 
   if(argc!=3){
-    printf("./vf48_ERaw input_data_file output_data_file\n");
-    printf("Saves raw energy spectrum to an .mca file.\n");
+    printf("./vf48_DisplayERaw input_data_file channel\n");
+    printf("Shows raw energy spectrum in a ROOT window.\n");
     exit(0);
   }
+
+  gPlotChan = atoi(argv[2]);
+
+
+  if (!app)
+    app = new TApplication("testTTC", NULL, NULL);
+
+  if (!gWindow) {
+    gWindow = new TCanvas("Window", "window", 1000, 1000);
+    gWindow->Clear();
+    //gWindow->Divide(2, 4);
+
+    
+  }
+
+  hchan = new TH1D("hchan", "chan", 2000, 0, 2000-1);
+  hchan->Reset();
+
+  
 
   //setup the input data file
   sprintf(fileName,argv[1]);
@@ -72,11 +98,6 @@ int main(int argc, char* argv[])
     printf("ERROR: could not read file: %s\n",fileName);
   }
   printf("Opened data file: %s\n",fileName);
-
-  //initialize the output histogram
-  for (int i=0;i<NSPECT;i++)
-    for (int j=0;j<S32K;j++)
-      outHist[i][j]=0;
 
   double charge;
   while(!(feof(InpDataFile)))//go until the end of file is reached
@@ -88,39 +109,20 @@ int main(int argc, char* argv[])
         printf("Elements read: %i\n",size);
         exit(-1);
       }
-      for(int i=0;i<VF48_MAX_CHANNELS;i++){
-        charge = EvalVF48WaveformE(m,i);
-        if(charge >= 0){
-          if(charge < S32K){
-            outHist[i][(int)charge]++;
-          }else{
-            outHist[i][S32K-1000]++;
-          }
-          
-        }
-        
-      }
+      charge = EvalVF48WaveformE(m,gPlotChan);
+      hchan->Fill(charge);
       delete m;
     }
-  
+
+  hchan->Draw();
+  gWindow->Modified();
+  gWindow->Update();
+
+  printf("Showing ROOT window...\n");
+  app->Run(kTRUE);
+
   //close the data file
   fclose(InpDataFile);
-
-  //open the output file
-  //setup the input data file
-  sprintf(outName,argv[2]);
-  if((output=fopen(outName,"w"))==NULL)
-    {
-      printf("ERROR: Cannot open the output file: %s!\n",outName);
-      exit(-1);
-    }
-  
-  //write the output histogram to disk
-  for (int i=0;i<VF48_MAX_CHANNELS;i++)
-    fwrite(outHist[i],S32K*sizeof(int),1,output);
-  fclose(output);
-  printf("Spectrum written to file: %s\n",outName);
-  
 
   return 0;
 }

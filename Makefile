@@ -5,6 +5,9 @@ CFLAGS   =  -DOS_LINUX -g -O2 -Wall -Wuninitialized -I. -I$(MIDASSYS)/include -I
 ifdef ROOTSYS
 all:: vf48_DisplayWaveforms
 all:: vf48_ERaw
+all:: vf48_ERawGated
+all:: vf48_DisplayERaw
+all:: vf48_PrintERawPerEvent
 endif
 all:: vf48_TakeData
 all:: vf48_Status
@@ -22,8 +25,17 @@ ROOTLIBS      += $(ROOTGLIBS) $(RPATH)
 
 vf48_DisplayWaveforms.o: vf48_DisplayWaveforms.cxx
 	$(CXX) $(CFLAGS) -DHAVE_ROOT $(ROOTCFLAGS) -c $<
-	
+
 vf48_ERaw.o: vf48_ERaw.cxx
+	$(CXX) $(CFLAGS) -DHAVE_ROOT $(ROOTCFLAGS) -c $<
+
+vf48_ERawGated.o: vf48_ERawGated.cxx
+	$(CXX) $(CFLAGS) -DHAVE_ROOT $(ROOTCFLAGS) -c $<
+	
+vf48_DisplayERaw.o: vf48_DisplayERaw.cxx
+	$(CXX) $(CFLAGS) -DHAVE_ROOT $(ROOTCFLAGS) -c $<
+	
+vf48_PrintERawPerEvent.o: vf48_PrintERawPerEvent.cxx
 	$(CXX) $(CFLAGS) -DHAVE_ROOT $(ROOTCFLAGS) -c $<
 endif
 
@@ -47,6 +59,15 @@ vf48_DisplayWaveforms: vf48_DisplayWaveforms.o UnpackVF48A.o
 	$(CXX) -o $@ -O2 -g -Wall $^ $(ROOTGLIBS) -lvme
 
 vf48_ERaw: vf48_ERaw.o UnpackVF48A.o
+	$(CXX) -o $@ -O2 -g -Wall $^ $(ROOTGLIBS) -lvme
+
+vf48_ERawGated: vf48_ERawGated.o UnpackVF48A.o
+	$(CXX) -o $@ -O2 -g -Wall $^ $(ROOTGLIBS) -lvme
+
+vf48_DisplayERaw: vf48_DisplayERaw.o UnpackVF48A.o
+	$(CXX) -o $@ -O2 -g -Wall $^ $(ROOTGLIBS) -lvme
+
+vf48_PrintERawPerEvent: vf48_PrintERawPerEvent.o UnpackVF48A.o
 	$(CXX) -o $@ -O2 -g -Wall $^ $(ROOTGLIBS) -lvme
 endif
 
