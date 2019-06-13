@@ -145,7 +145,16 @@ int main(int argc, char* argv[])
     for (j=0; j<6; j++)
       if (grpEnabled&(1<<j))
         vf48_ParameterWrite(myvme, vf48base, j, VF48_TRIG_THRESHOLD, trigThreshold);
-
+  
+  //write the pretrigger sample count to the VF48 module
+  int preTrig = 500;
+  if (preTrig >= 0)
+    for (j=0; j<6; j++)
+      if (grpEnabled&(1<<j))
+        vf48_ParameterWrite(myvme, vf48base, j, VF48_PRE_TRIGGER, preTrig);
+  //read back the parameter
+  preTrig = vf48_ParameterRead(myvme, vf48base, 0, VF48_PRE_TRIGGER);
+      
   
   //write the K,L,M values to the VF48 module
   int kVal = 80;
@@ -177,6 +186,9 @@ int main(int argc, char* argv[])
   sprintf(fileName,argv[2]);
   DataFile = fopen(fileName,"wb");
   printf("\n\nWriting VF48 event data to file: %s\n",fileName);
+
+  //write the file header
+  fwrite(&preTrig,sizeof(int),1,DataFile);
 
 
   //MAIN DATA-TAKING LOOP

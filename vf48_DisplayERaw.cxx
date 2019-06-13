@@ -24,6 +24,8 @@ TApplication *app = NULL;
 TCanvas* gWindow;
 TH1D* hchan;
 
+int preTrig;
+
 //function to get energy from VF48 waveforms
 double EvalVF48WaveformE(const VF48module *m, int chan)
 {
@@ -42,20 +44,53 @@ double EvalVF48WaveformE(const VF48module *m, int chan)
   double bgavg = 0;
 
   //get the baseline for background
-  //may want some more robust way to get the number of baseline samples
-  for(int i=0; i<30;i++){
+  for(int i=0; i<preTrig;i++){
     if(i< m->channels[chan].numSamples){
       bgavg += m->channels[chan].samples[i];
     }
   }
-  bgavg = bgavg / 30.0;
+  bgavg = bgavg / (preTrig*1.0);
+
+  //find the maximum value in the waveform
+  int maxVal = 0;
+  int maxChan = 0;
+  for(int i=0; i<m->channels[chan].numSamples; i++){
+    if(m->channels[chan].samples[i] > maxVal){
+      maxChan = i;
+      maxVal = m->channels[chan].samples[i];
+    }
+  }
+  
+  int upperLim = 0;
+  int lowerLim = 0;
+  //find the integration limits
+  for(int i=maxChan; i>0; i--){
+    if(m->channels[chan].samples[i] < bgavg){
+      lowerLim = i+1;
+      break;
+    }
+  }
+  if(lowerLim < preTrig){
+    lowerLim = preTrig;
+  }
+  for(int i=maxChan; i<m->channels[chan].numSamples; i++){
+    if(m->channels[chan].samples[i] < bgavg){
+      upperLim = i-1;
+      break;
+    }
+  }
 
   //integrate the background subtracted signal
-  for(int i=0; i<m->channels[chan].numSamples; i++){
-    charge += m->channels[chan].samples[i] - bgavg;
+  for(int i=lowerLim; i<=upperLim; i++){
+    //don't integrate below the baseline
+    if(m->channels[chan].samples[i] > bgavg){
+      charge += m->channels[chan].samples[i] - bgavg;
+    }
   }
-  charge = charge / 100.0; //arbitrary normalization to fit in histogram
-  //printf("background average: %f, charge %f\n",bgavg,charge);
+  //charge = charge / 100.0; //arbitrary normalization to fit in histogram
+  
+  //printf("background average: %f, lower limit: %i, upper limit: %i, charge: %f\n",bgavg,lowerLim,upperLim,charge);
+  //getc(stdin);
 
   return charge;
 
@@ -98,6 +133,15 @@ int main(int argc, char* argv[])
     printf("ERROR: could not read file: %s\n",fileName);
   }
   printf("Opened data file: %s\n",fileName);
+
+  //read raw data file header
+  int size = fread(&preTrig,sizeof(int),1,InpDataFile);
+  if((size != 1)&&(!(feof(InpDataFile)))){
+    printf("File read error!\n");
+    printf("Elements read: %i\n",size);
+    exit(-1);
+  }
+  printf("Pre trigger length: %i\n",preTrig);
 
   double charge;
   while(!(feof(InpDataFile)))//go until the end of file is reached

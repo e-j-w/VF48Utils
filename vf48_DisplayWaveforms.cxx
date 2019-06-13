@@ -19,6 +19,7 @@
 #include "TGraph.h"
 
 int gPlotChan = 1; //channel to plot
+int preTrig;
 
 TApplication *app = NULL;
 TCanvas* gWindow;
@@ -85,10 +86,19 @@ int main(int argc, char* argv[])
   }
   printf("Opened data file: %s\n",fileName);
 
+  //read raw data file header
+  int size = fread(&preTrig,sizeof(int),1,InpDataFile);
+  if((size != 1)&&(!(feof(InpDataFile)))){
+    printf("File read error!\n");
+    printf("Elements read: %i\n",size);
+    exit(-1);
+  }
+  printf("Pre trigger length: %i\n",preTrig);
+
   while(!(feof(InpDataFile)))//go until the end of file is reached
     {
       VF48module* m = (VF48module*)malloc(sizeof(VF48module));
-      int size = fread(m,sizeof(VF48module),1,InpDataFile);
+      size = fread(m,sizeof(VF48module),1,InpDataFile);
       if((size != 1)&&(!(feof(InpDataFile)))){
         printf("File read error!\n");
         printf("Elements read: %i\n",size);
