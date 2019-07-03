@@ -14,7 +14,7 @@
 #define S32K   32768
 #define NSPECT 100
 
-int preTrig;
+int preTrig,vf48samples;
 int outHist[NSPECT][S32K];
 
 //function to get energy from VF48 waveforms
@@ -93,7 +93,7 @@ int main(int argc, char* argv[])
   char   fileName[132], outName[132];
 
   if(argc!=3){
-    printf("./vf48_ERaw input_data_file output_data_file signal\n");
+    printf("./vf48_ERaw input_data_file output_data_file\n");
     printf("Saves raw energy spectrum to an .mca file.\n");
     exit(0);
   }
@@ -118,7 +118,13 @@ int main(int argc, char* argv[])
     printf("Elements read: %i\n",size);
     exit(-1);
   }
-  printf("Pre trigger length: %i\n",preTrig);
+  size = fread(&vf48samples,sizeof(int),1,InpDataFile);
+  if((size != 1)&&(!(feof(InpDataFile)))){
+    printf("File read error!\n");
+    printf("Elements read: %i\n",size);
+    exit(-1);
+  }
+  printf("Pre trigger length: %i\nSamples per waveform: %i\n",preTrig,vf48samples);
 
   double charge;
   while(!(feof(InpDataFile)))//go until the end of file is reached

@@ -19,6 +19,7 @@
 #include "TGraph.h"
 
 int gPlotChan = 1; //channel to plot
+int vf48samples;
 int preTrig;
 
 TApplication *app = NULL;
@@ -31,7 +32,7 @@ void ShowVF48event(const VF48module *m)
   
   //debug info
   printf("--------------------------\n");
-  printf("Showing VF48 waveform from channel %i (%i samples total)\n",gPlotChan, m->channels[gPlotChan].numSamples);
+  printf("Showing VF48 waveform from channel %i (%i samples total)\n",gPlotChan, vf48samples);
   printf("VF48 group trigger #s: %i %i %i %i %i %i\n",m->trigno[0],m->trigno[1],m->trigno[2],m->trigno[3],m->trigno[4],m->trigno[5]);
   printf("VF48 group timestamps: %f %f %f %f %f %f\n",m->timestamps[0],m->timestamps[1],m->timestamps[2],m->timestamps[3],m->timestamps[4],m->timestamps[5]);
   printf("charge: %i\n",m->channels[gPlotChan].charge);
@@ -49,12 +50,12 @@ void ShowVF48event(const VF48module *m)
     gWindow->Clear();
     //gWindow->Divide(2, 4);
 
-    hchan = new TH1D("hchan", "chan", m->channels[gPlotChan].numSamples, 0, m->channels[gPlotChan].numSamples-1);
+    hchan = new TH1D("hchan", "chan", vf48samples, 0, vf48samples-1);
     hchan->Draw();
   }
 
   hchan->Reset();
-  for (int i=0; i<m->channels[gPlotChan].numSamples; i++)
+  for (int i=0; i<vf48samples; i++)
     hchan->SetBinContent(i+1,  m->channels[gPlotChan].samples[i]);
 
   gWindow->Modified();
@@ -72,7 +73,7 @@ int main(int argc, char* argv[])
 
   if(argc!=3){
     printf("./vf48_DisplayWaveforms input_data_file channel\n");
-    printf("Shows waveforms in a ROOT window.");
+    printf("Shows waveforms in a ROOT window.\n");
     exit(0);
   }
 
@@ -93,7 +94,13 @@ int main(int argc, char* argv[])
     printf("Elements read: %i\n",size);
     exit(-1);
   }
-  printf("Pre trigger length: %i\n",preTrig);
+  size = fread(&vf48samples,sizeof(int),1,InpDataFile);
+  if((size != 1)&&(!(feof(InpDataFile)))){
+    printf("File read error!\n");
+    printf("Elements read: %i\n",size);
+    exit(-1);
+  }
+  printf("Pre trigger length: %i\nSamples per waveform: %i\n",preTrig,vf48samples);
 
   while(!(feof(InpDataFile)))//go until the end of file is reached
     {

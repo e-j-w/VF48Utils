@@ -154,8 +154,16 @@ int main(int argc, char* argv[])
         vf48_ParameterWrite(myvme, vf48base, j, VF48_PRE_TRIGGER, preTrig);
   //read back the parameter
   preTrig = vf48_ParameterRead(myvme, vf48base, 0, VF48_PRE_TRIGGER);
-      
+
+  /*//write the trigger threshold to the VF48 module
+  int pedestal = 100;
+  if (trigThreshold >= 0)
+    for (j=0; j<6; j++)
+      if (grpEnabled&(1<<j))
+        vf48_ParameterWrite(myvme, vf48base, j, VF48_PEDESTAL, pedestal);*/
   
+
+
   //write the K,L,M values to the VF48 module
   int kVal = 80;
   int lVal = 72;
@@ -189,6 +197,7 @@ int main(int argc, char* argv[])
 
   //write the file header
   fwrite(&preTrig,sizeof(int),1,DataFile);
+  fwrite(&vf48samples,sizeof(int),1,DataFile);
 
 
   //MAIN DATA-TAKING LOOP
@@ -417,7 +426,7 @@ int main(int argc, char* argv[])
           VF48event* e = vfu->GetEvent();
           if (!e)
             break;
-          //PrintVF48event(e2);
+          //PrintVF48event(e);
           //write event data to disk
           fwrite(e->modules[0],sizeof(VF48module),1,DataFile);
           delete e;

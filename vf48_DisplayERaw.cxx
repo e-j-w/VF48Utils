@@ -24,7 +24,7 @@ TApplication *app = NULL;
 TCanvas* gWindow;
 TH1D* hchan;
 
-int preTrig;
+int preTrig,vf48samples;
 
 //function to get energy from VF48 waveforms
 double EvalVF48WaveformE(const VF48module *m, int chan)
@@ -141,7 +141,13 @@ int main(int argc, char* argv[])
     printf("Elements read: %i\n",size);
     exit(-1);
   }
-  printf("Pre trigger length: %i\n",preTrig);
+  size = fread(&vf48samples,sizeof(int),1,InpDataFile);
+  if((size != 1)&&(!(feof(InpDataFile)))){
+    printf("File read error!\n");
+    printf("Elements read: %i\n",size);
+    exit(-1);
+  }
+  printf("Pre trigger length: %i\nSamples per waveform: %i\n",preTrig,vf48samples);
 
   double charge;
   while(!(feof(InpDataFile)))//go until the end of file is reached

@@ -14,7 +14,7 @@
 #define S32K   32768
 #define NSPECT 100
 
-int preTrig;
+int preTrig,vf48samples;
 int outHist[NSPECT][S32K];
 
 //function to get energy from VF48 waveforms
@@ -114,7 +114,13 @@ int main(int argc, char* argv[])
     printf("Elements read: %i\n",size);
     exit(-1);
   }
-  printf("Pre trigger length: %i\n",preTrig);
+  size = fread(&vf48samples,sizeof(int),1,InpDataFile);
+  if((size != 1)&&(!(feof(InpDataFile)))){
+    printf("File read error!\n");
+    printf("Elements read: %i\n",size);
+    exit(-1);
+  }
+  printf("Pre trigger length: %i\nSamples per waveform: %i\n",preTrig,vf48samples);
 
   gateLow = atoi(argv[3]);
   gateHigh = atoi(argv[4]);
